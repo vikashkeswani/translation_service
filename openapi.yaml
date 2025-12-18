@@ -1,0 +1,431 @@
+openapi: 3.0.3
+info:
+  title: Translation Management Service API
+  version: 1.0.0
+  description: |
+    API-driven service to manage translations across multiple locales
+    with tagging, search, and JSON export support.
+    Authentication via Laravel Sanctum (Bearer token).
+
+servers:
+  - url: http://localhost:8000/api
+    description: Local Docker environment
+
+security:
+  - sanctumAuth: []
+
+components:
+  securitySchemes:
+    sanctumAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: "Bearer"
+
+  schemas:
+    UserRegister:
+      type: object
+      required:
+        - name
+        - email
+        - password
+        - password_confirmation
+      properties:
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          example: john@example.com
+        password:
+          type: string
+          example: secret123
+        password_confirmation:
+          type: string
+          example: secret123
+
+    AuthToken:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+
+    Language:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+          example: en
+        name:
+          type: string
+          example: English
+        is_active:
+          type: boolean
+
+    TranslationTag:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          example: web
+
+    Translation:
+      type: object
+      properties:
+        id:
+          type: integer
+        key:
+          type: string
+          example: translation_5
+        value:
+          type: string
+          example: Hello
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        language:
+          $ref: '#/components/schemas/Language'
+        tag:
+          $ref: '#/components/schemas/TranslationTag'
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Record does not exist
+
+paths:
+
+  /register:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegister'
+      responses:
+        201:
+          description: Returns token after registration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+        422:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /login:
+    post:
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  example: john@example.com
+                password:
+                  type: string
+                  example: secret123
+      responses:
+        200:
+          description: Returns auth token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+        401:
+          description: Invalid credentials
+
+  /logout:
+    post:
+      summary: Logout authenticated user
+      security:
+        - sanctumAuth: []
+      responses:
+        204:
+          description: Successfully logged out
+
+  /languages:
+    get:
+      summary: List languages
+      security:
+        - sanctumAuth: []
+      responses:
+        200:
+          description: List of languages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Language'
+
+    post:
+      summary: Create a new language
+      security:
+        - sanctumAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name]
+              properties:
+                code:
+                  type: string
+                  example: ur
+                name:
+                  type: string
+                  example: Urdu
+      responses:
+        201:
+          description: Language created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Language'
+
+  /languages/{id}/toggle:
+    patch:
+      summary: Toggle language active status
+      security:
+        - sanctumAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Language toggled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Language'
+        404:
+          description: Language not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /translations:
+    get:
+      summary: List translations
+      security:
+        - sanctumAuth: []
+      parameters:
+        - in: query
+          name: key
+          schema:
+            type: string
+        - in: query
+          name: value
+          schema:
+            type: string
+        - in: query
+          name: tag
+          schema:
+            type: string
+      responses:
+        200:
+          description: Paginated translations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Translation'
+
+    post:
+      summary: Create a translation
+      security:
+        - sanctumAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key, tag_id, value]
+              properties:
+                key:
+                  type: string
+                  example: translation_5
+                tag_id:
+                  type: integer
+                  example: 3
+                value:
+                  type: string
+                  example: Hello
+      responses:
+        201:
+          description: Translation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Translation'
+        404:
+          description: Tag or Language not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /translations/{id}:
+    get:
+      summary: Get a single translation
+      security:
+        - sanctumAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Translation found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Translation'
+        404:
+          description: Translation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: Update translation
+      security:
+        - sanctumAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                value:
+                  type: string
+      responses:
+        200:
+          description: Translation updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Translation'
+        404:
+          description: Translation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete translation
+      security:
+        - sanctumAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Translation deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Record Deleted Successfully!
+        404:
+          description: Translation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /translation/search:
+    get:
+      summary: Search translations
+      security:
+        - sanctumAuth: []
+      parameters:
+        - name: key
+          in: query
+          schema:
+            type: string
+        - name: value
+          in: query
+          schema:
+            type: string
+        - name: tag
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Translation'
+
+  /export/translations:
+    get:
+      summary: Export translations as JSON
+      description: |
+        Returns all translations for active languages for frontend consumption.
+      responses:
+        200:
+          description: JSON export
+          content:
+            application/json:
+              example:
+                - id: 5
+                  key: translation_5
+                  value: in
+                  created_at: "2025-12-18 09:11:37"
+                  updated_at: "2025-12-18 09:11:37"
+                  language:
+                    id: 1
+                    code: en
+                    name: English
+                  tag:
+                    id: 3
+                    name: web
