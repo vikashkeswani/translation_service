@@ -1,191 +1,132 @@
-Translation Management Service
+# Translation Management Service
 
 A Laravel 12 API-driven service to manage translations for multiple languages/locales with tagging, search, and JSON export functionality.
-
 Designed for performance, scalability, and clean code, following PSR-12 and SOLID principles.
 
-Features
+# Features
+- Store translations for multiple locales (e.g., en, fr, es)
+- Tag translations for context (e.g., mobile, web)
+- CRUD endpoints for translations, languages, and tags
+- Search translations by key, value, or tag
+- JSON export endpoint for frontend applications (Vue.js, React)
+- Token-based authentication using Laravel Sanctum
+- Efficient handling of large datasets (>100k translations)
+- Docker-ready for easy setup
+- OpenAPI documentation available at openapi,yml file
 
-Store translations for multiple locales (e.g., en, fr, es)
+# Tech Stack
+- PHP 8.3 + Laravel 12
+- MySQL / MariaDB
+- Docker + Docker Compose
+- Sanctum for authentication
+- OpenAPI for API documentation
 
-Tag translations for context (e.g., mobile, web)
+# Design Choices
 
-CRUD endpoints for translations, languages, and tags
+  # Database Schema
+  - translations table stores keys and values as JSON for flexibility across languages.
+  - languages table allows adding new locales dynamically with an is_active flag.
+  - translation_tags table supports context tagging for translations.
 
-Search translations by key, value, or tag
+# Scalability
+- Eager loading with with(['language', 'tag']) for optimized queries.
+- Export endpoint uses LazyCollection / cursor() to handle millions of records efficiently.
+- Indexed key column for fast search queries.
 
-JSON export endpoint for frontend applications (Vue.js, React)
+# SOLID & PSR-12 Compliance
+- Service layer (TranslationService) separates business logic from controllers.
+- Requests and validations use FormRequest classes (TranslationRequest, LanguageRequest).
+- API Resources (TranslationResource, LanguageResource) ensure consistent JSON responses.
 
-Token-based authentication using Laravel Sanctum
+# Performance Optimization
+- JSON export response is streamed to minimize memory usage.
+- Pagination applied on index/search endpoints.
+- Factory seeding supports 100k+ records for stress testing.
 
-Efficient handling of large datasets (>100k translations)
+# Security
+- All protected endpoints use Sanctum token-based authentication.
+- Input validation to prevent SQL injection or invalid data.
 
-Docker-ready for easy setup
+# Documentation & Testing
+- OpenAPI/Swagger documentation with interactive testing (/api/documentation).
+- Unit, feature, and performance tests included to ensure reliability and speed.
 
-OpenAPI/Swagger documentation available at /api/documentation
-
-Tech Stack
-
-PHP 8.3 + Laravel 12
-
-MySQL / MariaDB
-
-Docker + Docker Compose
-
-Sanctum for authentication
-
-L5-Swagger for API documentation
-
-Design Choices
-
-Database Schema
-
-translations table stores keys and values as JSON for flexibility across languages.
-
-languages table allows adding new locales dynamically with an is_active flag.
-
-translation_tags table supports context tagging for translations.
-
-Scalability
-
-Eager loading with with(['language', 'tag']) for optimized queries.
-
-Export endpoint uses LazyCollection / cursor() to handle millions of records efficiently.
-
-Indexed key column for fast search queries.
-
-SOLID & PSR-12 Compliance
-
-Service layer (TranslationService) separates business logic from controllers.
-
-Requests and validations use FormRequest classes (TranslationRequest, LanguageRequest).
-
-API Resources (TranslationResource, LanguageResource) ensure consistent JSON responses.
-
-Performance Optimization
-
-JSON export response is streamed to minimize memory usage.
-
-Pagination applied on index/search endpoints.
-
-Factory seeding supports 100k+ records for stress testing.
-
-Security
-
-All protected endpoints use Sanctum token-based authentication.
-
-Input validation to prevent SQL injection or invalid data.
-
-Documentation & Testing
-
-OpenAPI/Swagger documentation with interactive testing (/api/documentation).
-
-Unit, feature, and performance tests included to ensure reliability and speed.
-
-Setup Instructions
+# Setup Instructions
 1. Clone Repository
-git clone https://github.com/your-username/translation-service.git
-cd translation-service
+- git clone https://github.com/your-username/translation-service.git
+- cd translation-service
 
 2. Create .env File
-
-Copy .env.example:
-
-cp .env.example .env
-
+  - Copy .env.example:
+  - cp .env.example .env
 
 Update database credentials:
-
-DB_CONNECTION=mysql
-DB_HOST=mysql
-DB_PORT=3306
-DB_DATABASE=translation_service
-DB_USERNAME=user
-DB_PASSWORD=secret
+  - DB_CONNECTION=mysql
+  - DB_HOST=mysql
+  - DB_PORT=3306
+  - DB_DATABASE=translation_service
+  - DB_USERNAME=user
+  - DB_PASSWORD=secret
 
 3. Build & Start Docker Containers
-docker-compose up -d --build
+ - docker-compose up -d --build
 
-
-App runs on http://localhost:8000
-
-MySQL container runs on port 3306
+- App runs on http://localhost:8000
+- MySQL container runs on port 3306
 
 4. Run Migrations & Seed Database
-docker-compose exec app php artisan migrate --seed
+ - docker-compose exec app php artisan migrate
+ - docker-compose exec app php artisan db:seed
+ - docker-compose exec app php artisan translation:seed-large 100000 
 
 
-Seeds translations, languages, and tags for testing.
+5. Testing
+- Run unit, feature, and performance tests:
+- docker-compose exec app php artisan test
+- Performance tests simulate high load on CRUD, search, and export endpoints.
 
-Supports generating 100k+ records via factory.
-
-5. Install Composer Dependencies (if not built in Docker)
-docker-compose exec app composer install
-
-6. Generate Swagger Documentation
-docker-compose exec app php artisan l5-swagger:generate
-
-
-Open documentation: http://localhost:8000/api/documentation
-
-7. Testing
-
-Run unit, feature, and performance tests:
-
-docker-compose exec app php artisan test
-
-
-Performance tests simulate high load on CRUD, search, and export endpoints.
-
-Performance Testing
-
-Performance tests ensure the service meets the following requirements:
+# Performance Testing
+ - Performance tests ensure the service meets the following requirements:
 
 Endpoint	Max Response Time
-/translations	< 200ms
-/translation/search	< 200ms
-/export/translations	< 500ms
+- /translations	< 200ms
+- /translation/search	< 200ms
+- /export/translations	< 500ms
 
 1. Using Laravel Performance Test
+  A sample TranslationPerformanceTest.php is included under tests/Performance. Run:
+  docker-compose exec app php artisan test --testsuite=Performance
 
-A sample TranslationPerformanceTest.php is included under tests/Performance. Run:
-
-docker-compose exec app php artisan test --testsuite=Performance
-
-
-Measures response times for index, search, and export endpoints.
-Validates that response times meet performance thresholds.
+- Measures response times for index, search, and export endpoints.
+- Validates that response times meet performance thresholds.
 
 2. Manual Benchmarking via Artisan Tinker
   docker-compose exec app php artisan tinker
 
-$start = microtime(true);
-$response = Http::withToken('YOUR_SANCTUM_TOKEN')->get('http://localhost:8000/api/export/translations');
-$end = microtime(true);
-echo "Export took " . (($end - $start) * 1000) . " ms\n";
+- $start = microtime(true);
+- $response = Http::withToken('YOUR_SANCTUM_TOKEN')->get('http://localhost:8000/api/export/translations');
+- $end = microtime(true);
+- echo "Export took " . (($end - $start) * 1000) . " ms\n";
 
 Useful for measuring real response times on large datasets.
 
 
 API Endpoints Overview
 Endpoint	Method	Auth	Description
-/register	POST	❌	Register new user
-/login	POST	❌	Login user
-/logout	POST	✅	Logout user
-/languages	GET, POST	✅	List/Create languages
-/languages/{id}/toggle	PATCH	✅	Toggle active status
-/translations	GET, POST	✅	List/Create translations
-/translations/{id}	GET, PUT, DELETE	✅	Retrieve/Update/Delete translation
-/translation/search	GET	✅	Search translations
-/export/translations	GET	❌	Export all active translations in JSON
-Notes
+- /register	POST	❌	Register new user
+- /login	POST	❌	Login user
+- /logout	POST	✅	Logout user
+- /languages	GET, POST	✅	List/Create languages
+- /languages/{id}/toggle	PATCH	✅	Toggle active status
+- /translations	GET, POST	✅	List/Create translations
+- /translations/{id}	GET, PUT, DELETE	✅	Retrieve/Update/Delete translation
+- /translation/search	GET	✅	Search translations
+- /export/translations	GET	❌	Export all active translations in JSON
 
-Adding a new language: Use /languages POST endpoint with code and name. The translation values JSON in the translations table will support the new locale automatically.
+# Notes
+- Adding a new language: Use /languages POST endpoint with code and name. The translation values JSON in the translations table will support the new locale automatically.
+- Large datasets: Export and index endpoints are optimized for memory and speed using cursor() and pagination.
+- Authentication: Pass Authorization: Bearer <token> in headers for all protected routes.
 
-Large datasets: Export and index endpoints are optimized for memory and speed using cursor() and pagination.
-
-Authentication: Pass Authorization: Bearer <token> in headers for all protected routes.
-
-Author
-
+# Author
 Vikash Keswani – Senior PHP/Laravel Developer
