@@ -30,12 +30,6 @@ class TranslationService
     {
         $translation->update($data);
 
-
-        // if (isset($data['tags'])) {
-        //     $tags = collect($data['tags'])->map(fn ($name) => Tag::firstOrCreate(['name' => $name])->id);
-        //     $translation->tags()->sync($tags);
-        // }
-
         Cache::forget('translations.export');
 
         $translation->load(['language', 'tag']);

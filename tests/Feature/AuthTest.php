@@ -76,16 +76,26 @@ class AuthTest extends TestCase
     }
 
    #[Test]
-    public function it_can_logout_a_user()
+   public function it_can_logout_a_user()
     {
+        // Arrange
         $user = User::factory()->create();
         $token = $user->createToken('api')->plainTextToken;
 
-        $response = $this->withHeader('Authorization', "Bearer $token")
-                         ->postJson(route('auth.logout'));
+        // Act
+        $response = $this
+            ->withHeader('Authorization', "Bearer {$token}")
+            ->postJson(route('auth.logout'));
 
-        $response->assertNoContent();
+        // Assert response
+        $response
+            ->assertStatus(200)
+            ->assertJson([
+                'message' => 'Logged out successfully.',
+            ]);
 
-        $this->assertCount(0, $user->tokens()->get());
+        // Assert token is revoked (refresh user from DB)
+        $this->assertDatabaseCount('personal_access_tokens', 0);
     }
+
 }

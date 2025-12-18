@@ -24,8 +24,6 @@ class TranslationController extends Controller
 
     public function show($id) 
     {
-        // $translation = Translation::with(['language', 'tags'])->firstWhere('id',$id);
-        // return new TranslationResource($translation);
         $translation = Translation::with(['language', 'tag'])
                         ->find($id);
 
@@ -87,19 +85,6 @@ class TranslationController extends Controller
                         ->when($request->value, fn ($q) => $q->where('value', 'like', "%{$request->value}%"))
                         ->when($request->tag, fn ($q) => $q->whereHas('tag', fn ($t) => $t->where('name', $request->tag)))
                         ->paginate(20);
-
-        // $translations = Translation::with(['language:id,code,name,is_active', 'tag:id,name'])
-        //     ->whereHas('language', fn($q) => $q->where('is_active', true))
-        //     ->when($request->key, fn($q) =>
-        //         $q->where('key', 'like', "%{$request->key}%")
-        //     )
-        //     ->when($request->value, fn($q) =>
-        //         $q->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(values, '$.en')) LIKE ?", ["%{$request->value}%"])
-        //     )
-        //     ->when($request->tag, fn($q) =>
-        //         $q->whereHas('tag', fn($t) => $t->where('name', $request->tag))
-        //     )
-        //     ->paginate(20);
 
         return new TranslationCollection($translations);
         
