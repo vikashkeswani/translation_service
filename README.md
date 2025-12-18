@@ -79,6 +79,9 @@ Update database credentials:
  - docker-compose exec app php artisan db:seed
  - docker-compose exec app php artisan translation:seed-large 100000 
 
+User Credentials
+email: test@example.com
+password: test@123
 
 5. Testing
 - Run unit, feature, and performance tests:
