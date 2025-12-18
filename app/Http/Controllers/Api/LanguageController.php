@@ -14,13 +14,21 @@ class LanguageController extends Controller
 {
     public function index()
     {
-        $languages = Language::paginate(10);
+        $languages = Cache::remember(
+            'languages.list',
+            now()->addHours(1),
+            fn () => Language::paginate(10)
+        );
+
         return new LanguageCollection($languages);
     }
 
     public function store(LanguageRequest $request)
     {
-        return new LanguageResource(Language::create($request->validated()));
+         $language = Language::create($request->validated());
+         Cache::forget('languages.list');
+         Cache::forget('translations.export.active');
+         return new LanguageResource($language);
     }
 
     public function toggle($id)
@@ -37,7 +45,10 @@ class LanguageController extends Controller
             'is_active' => ! $language->is_active,
         ]);
 
-        Cache::forget('translations.export');
+        // Cache::forget('translations.export');
+        Cache::forget('languages.list');
+        Cache::forget('translations.export.active');
+        Cache::forget('translations.list');
 
         return new LanguageResource($language);
     }

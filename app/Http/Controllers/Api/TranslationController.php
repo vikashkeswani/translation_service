@@ -18,19 +18,26 @@ class TranslationController extends Controller
 
     public function index()
     {
+        $translations = Cache::remember(
+            'translations.list',
+            now()->addHours(1),
+            fn () => Translation::with(['language', 'tag'])->paginate(20)
+        );
+
         $translations = Translation::with(['language', 'tag'])->paginate(20);
         return new TranslationCollection($translations);
     }
 
     public function show($id) 
     {
-        $translation = Translation::with(['language', 'tag'])
-                        ->find($id);
+        $translation = Cache::remember(
+            "translations.show.$id",
+            now()->addMinutes(10),
+            fn () => Translation::with(['language', 'tag'])->find($id)
+        );
 
         if (! $translation) {
-            return response()->json([
-                'message' => 'Record does not exist',
-            ], 404);
+            return response()->json(['message' => 'Record does not exist'], 404);
         }
 
         return new TranslationResource($translation);
@@ -41,7 +48,11 @@ class TranslationController extends Controller
         try{
 
             $translation = $this->service->create($request->validated());
-            return new TranslationResource($translation);
+             
+             Cache::forget('translations.export.active');
+             Cache::forget('translations.list');
+            
+             return new TranslationResource($translation);
 
         }catch(Exception $e){
              return response()->json([
@@ -60,6 +71,10 @@ class TranslationController extends Controller
             ], 404);
         }
 
+        Cache::forget("translations.show.$id");
+        Cache::forget('translations.export.active');
+        Cache::forget('translations.list');
+
         return new TranslationResource($this->service->update($translation, $request->validated()));
     }
 
@@ -73,18 +88,25 @@ class TranslationController extends Controller
             ], 404);
         }
         
-        $translation->delete();
+        $this->service->delete($translation);
         return response()->json(['message' => 'Record Deleted Successfully!']);
     }
 
     public function search(TranslationSearchRequest $request)
     {
-        $translations = Translation::with(['language', 'tag'])
-                        ->whereHas('language', fn ($q) => $q->where('is_active', true))
-                        ->when($request->key, fn ($q) => $q->where('key', 'like', "%{$request->key}%"))
-                        ->when($request->value, fn ($q) => $q->where('value', 'like', "%{$request->value}%"))
-                        ->when($request->tag, fn ($q) => $q->whereHas('tag', fn ($t) => $t->where('name', $request->tag)))
-                        ->paginate(20);
+        $cacheKey = 'translations.search.' . md5(json_encode($request->validated()));
+
+        $translations = Cache::remember(
+                $cacheKey,
+                now()->addMinutes(5),
+                function () use ($request) {
+                    return Translation::with(['language', 'tag'])
+                                    ->whereHas('language', fn ($q) => $q->where('is_active', true))
+                                    ->when($request->key, fn ($q) => $q->where('key', 'like', "%{$request->key}%"))
+                                    ->when($request->value, fn ($q) => $q->where('value', 'like', "%{$request->value}%"))
+                                    ->when($request->tag, fn ($q) => $q->whereHas('tag', fn ($t) => $t->where('name', $request->tag)))
+                                    ->paginate(20);
+            });
 
         return new TranslationCollection($translations);
         

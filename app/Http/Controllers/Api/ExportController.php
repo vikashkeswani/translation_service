@@ -23,29 +23,34 @@ class ExportController extends Controller
     // Extracted method
     public function getTranslations(): array
     {
-        return Translation::with(['language', 'tag'])
-            ->whereHas('language', fn ($q) => $q->where('is_active', true))
-            ->cursor()
-            ->map(function ($translation) {
-                return [
-                    'id' => $translation->id,
-                    'key' => $translation->key,
-                    'value' => $translation->value,
-                    'created_at' => $translation->created_at?->toDateTimeString(),
-                    'updated_at' => $translation->updated_at?->toDateTimeString(),
+        return Cache::remember(
+            'translations.export.active',
+            now()->addMinutes(30),
+            function () {
+                return Translation::with(['language', 'tag'])
+                    ->whereHas('language', fn ($q) => $q->where('is_active', true))
+                    ->cursor()
+                    ->map(function ($translation) {
+                        return [
+                            'id' => $translation->id,
+                            'key' => $translation->key,
+                            'value' => $translation->value,
+                            'created_at' => $translation->created_at?->toDateTimeString(),
+                            'updated_at' => $translation->updated_at?->toDateTimeString(),
 
-                    'language' => [
-                        'id' => $translation->language->id,
-                        'code' => $translation->language->code,
-                        'name' => $translation->language->name,
-                    ],
-                    'tag' => [
-                        'id' => $translation->tag->id,
-                        'name' => $translation->tag->name,
-                    ],
-                ];
-            })
-            ->all();
+                            'language' => [
+                                'id' => $translation->language->id,
+                                'code' => $translation->language->code,
+                                'name' => $translation->language->name,
+                            ],
+                            'tag' => [
+                                'id' => $translation->tag->id,
+                                'name' => $translation->tag->name,
+                            ],
+                        ];
+                    })
+                    ->all();
+        });
     }
 
 }
