@@ -53,7 +53,7 @@ Designed for performance, scalability, and clean code, following PSR-12 and SOLI
 
 # Setup Instructions
 1. Clone Repository
-- git clone https://github.com/your-username/translation-service.git
+- git clone https://github.com/vikashkeswani/translation_service.git
 - cd translation-service
 
 2. Create .env File
