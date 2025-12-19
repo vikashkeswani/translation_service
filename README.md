@@ -81,9 +81,8 @@ Update database credentials:
 - MySQL container runs on port 3306
 
 4. Run Migrations & Seed Database
- - docker-compose exec app php artisan migrate
- - docker-compose exec app php artisan db:seed
- - docker-compose exec app php artisan translation:seed-large 100000 
+ - docker exec -it translation_service php artisan migrate
+ - docker exec -it translation_service php artisan db:seed 
 
 User Credentials
 email: test@example.com
