@@ -68,6 +68,12 @@ Update database credentials:
   - DB_USERNAME=user
   - DB_PASSWORD=secret
 
+  - CACHE_DRIVER=redis
+  - REDIS_CLIENT=phpredis
+  - REDIS_HOST=redis
+  - REDIS_PASSWORD=null
+  - REDIS_PORT=6379
+
 3. Build & Start Docker Containers
  - docker-compose up -d --build
 
