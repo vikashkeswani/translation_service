@@ -53,8 +53,8 @@ Designed for performance, scalability, and clean code, following PSR-12 and SOLI
 
 # Setup Instructions
 1. Clone Repository
-- git clone https://github.com/your-username/translation-service.git
-- cd translation-service
+- git clone https://github.com/vikashkeswani/translation_service.git
+- cd translation_service
 
 2. Create .env File
   - Copy .env.example:
@@ -68,6 +68,12 @@ Update database credentials:
   - DB_USERNAME=user
   - DB_PASSWORD=secret
 
+  - CACHE_DRIVER=redis
+  - REDIS_CLIENT=phpredis
+  - REDIS_HOST=redis
+  - REDIS_PASSWORD=null
+  - REDIS_PORT=6379
+
 3. Build & Start Docker Containers
  - docker-compose up -d --build
 
@@ -75,9 +81,8 @@ Update database credentials:
 - MySQL container runs on port 3306
 
 4. Run Migrations & Seed Database
- - docker-compose exec app php artisan migrate
- - docker-compose exec app php artisan db:seed
- - docker-compose exec app php artisan translation:seed-large 100000 
+ - docker exec -it translation_service php artisan migrate
+ - docker exec -it translation_service php artisan db:seed 
 
 User Credentials
 email: test@example.com
