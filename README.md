@@ -88,11 +88,14 @@ User Credentials
 email: test@example.com
 password: test@123
 
+
+
 5. Testing
 - Run unit, feature, and performance tests:
 - docker-compose exec app php artisan test
 - Performance tests simulate high load on CRUD, search, and export endpoints.
-
+- Postman collection added in repository so you can check apis using postman as well.
+  
 # Performance Testing
  - Performance tests ensure the service meets the following requirements:
 
